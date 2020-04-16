@@ -1,7 +1,5 @@
 This repository holds the implementation of the Moody Framework for the Chef's Hat Card Game Simulation.
 
-![Chef's Hat Card Game](gitImages/cardGame.jpg) 
-
 ## Moody Framework
 
 The Moody framework allows an agent playing the Chef's Hat Card game to ge\emph nerate a self-assessment
@@ -100,7 +98,7 @@ Click on the video bellow to see an example:
  
   [![Watch the video](Images/VideoImage.png)](https://www.youtube.com/watch?v=uRyfbktynT0&t=42s)
  
-
+ 
 ## Use and distribution policy
 
 All the examples in this repository are distributed under a Non-Comercial license. If you use this environment, you have to agree with the following itens:
