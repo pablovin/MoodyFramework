@@ -86,7 +86,7 @@ The Moody framework adds to the Chef's Hat Simulation the following plots:
 - "Experiment_Mood" - The mood reading for all the self and opponent's estimations.
 - "Experiment_MoodNeurons" - The mood readings, together with the individual neuron readings, for all the self and opponent's estimations.
 - "Experiment_SelfProbabilitySuccess" - The self and opponent's estimation confidence probabilities for each action.
-
+ 
 ##### Videos
 
 The Moody framework adds to the Chef's Hat Simulation the abillity to generate
