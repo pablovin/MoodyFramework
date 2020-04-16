@@ -4,7 +4,13 @@ This repository holds the implementation of the Moody Framework for the Chef's H
 
 ## Moody Framework
 
-The \emph Moody framework is able to explain the behavior of reinforcement learning agents in a competitive multiplayer card game scenario based on the players' assessment of its own performance.
+The Moody framework allows an agent playing the Chef's Hat Card game to ge\emph nerate a self-assessment
+of its own confidence while playing the game, as well as estimated confidences
+of all of its opponents.
+
+The confidences are represented as an intrinsic state, the Mood, and are used to explain how
+each of the agents are performing while
+playing the game.
 
 It builds on the phenomenological confidence representation of the Q-values selection and implements a Growing-When-Required (GWR) network to establish a temporal impact between the taken actions. Also, the model allows each agent to measure their opponents' actions based on their own assessing, endowing them with a closed-world representation of the entire game.
 
@@ -19,7 +25,7 @@ Fora a complete overview on the development of the game, refer to:
 
 ## The Moody Framework Plugin
 
-
+#### Mood Plugin
 The Moody Framework implementation is made to be used as a Plugin to the Chef's Hat Simulation environment.
 Every agent implemented by the simulation environment can be enhanced with a Moody plugin, allowing it to explain
 its own behavior.
@@ -28,8 +34,57 @@ Each plugin is able to generate a mood network for each agent and its opponents.
 at the agent instantiation phase:
 
 ```
-intrinsicWithMoodDQL = Intrinsic(selfConfidenceType=CONFIDENCE_PHENOMENOLOGICAL, isUsingSelfMood=True,isUsingOponentMood=True)
+From Mood.Intrinsic import Intrinsic
+
+intrinsicWithMoodDQL = Intrinsic(
+selfConfidenceType=CONFIDENCE_PHENOMENOLOGICAL, 
+isUsingSelfMood=True,
+isUsingOponentMood=True
+)
 ```
+
+and you can add a plugin to one agent:
+
+```
+agent1 = AgentDQL.AgentDQL([False, 1.0, "DQL", intrinsicWithMoodDQL]) #training agent
+```
+
+#### Online Update of the Mood
+
+For each action an agent performs (self-observation):
+
+```
+self.agent.intrinsic.doSelfAction(qValues) 
+```
+Everytime an agent finishes a game (self-observation):
+
+```
+self.intrinsic.doEndOfGame(score, thisPlayerIndex)
+```
+
+Everytime another agent perform an action (opponent estimation):
+
+```
+action, actionType, board, boardAfter,possibleActions, 
+cardsInHand, thisPlayer, myIndex, done, score = params
+observeOponentAction(self, params, QModel)
+```
+#### Offiline Mood
+
+The Moody framework is also able to generate the self and estimated Moods based on 
+recorded games. For that, it uses a 
+Using a Chef's Hat simulation dataset.
+
+- run_MoodFromDataset.py - Example on how to create Moods Offline.
+
+#### Mood Plots
+
+The Moody framework adds to the Chef's Hat Simulation the following plots:
+
+- "Experiment_Mood" - The mood reading for all the self and opponent's estimations.
+- "Experiment_MoodNeurons" - The mood readings, together with the individual neuron readings, for all the self and opponent's estimations.
+- "Experiment_SelfProbabilitySuccess" - The self and opponent's estimation confidence probabilities for each action.
+
 
 ## Use and distribution policy
 
@@ -47,6 +102,7 @@ All the examples in this repository are distributed under a Non-Comercial licens
 - Barros, P., Sciutti, A., Hootsmans, I. M., Opheij, L. M., Toebosch, R. H., & Barakova, E. (2020) The Chef's Hat Simulation Environment for Reinforcement-Learning-Based Agents. arXiv preprint arXiv:2003.05861.
 
 - Barros, P., Tanevska, A., & Sciutti, A. (2020). Learning from Learners: Adapting Reinforcement Learning Agents to be Competitive in a Card Game. arXiv preprint arXiv:2004.04000.
+
 ## Contact
 
 Pablo Barros - pablo.alvesdebarros@iit.it

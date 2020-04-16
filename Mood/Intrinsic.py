@@ -189,7 +189,7 @@ class Intrinsic():
         else:
             return -1, -1, -1
 
-    def doSelfAction(self, qValue, params):
+    def doSelfAction(self, qValue):
 
         nonZeroActions = numpy.nonzero(qValue)[0]
 
@@ -202,8 +202,8 @@ class Intrinsic():
             if probability > 1:
                 probability = 1
 
-        elif self.selfConfidenceType == CONFIDENCE_PMODEL:
-            probability = self.getPModelProbability(params)
+        # elif self.selfConfidenceType == CONFIDENCE_PMODEL:
+        #     probability = self.getPModelProbability(params)
 
         self.probabilities[0].append(probability)
 
