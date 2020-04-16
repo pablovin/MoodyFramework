@@ -33,7 +33,7 @@ its own behavior.
 Each plugin is able to generate a mood network for each agent and its opponents. You can define this
 at the agent instantiation phase:
 
-```
+```python
 From Mood.Intrinsic import Intrinsic
 
 intrinsicWithMoodDQL = Intrinsic(
@@ -45,7 +45,7 @@ isUsingOponentMood=True
 
 and you can add a plugin to one agent:
 
-```
+```python
 agent1 = AgentDQL.AgentDQL([False, 1.0, "DQL", intrinsicWithMoodDQL]) #training agent
 ```
 
@@ -53,18 +53,18 @@ agent1 = AgentDQL.AgentDQL([False, 1.0, "DQL", intrinsicWithMoodDQL]) #training 
 
 For each action an agent performs (self-observation):
 
-```
+```python
 self.agent.intrinsic.doSelfAction(qValues) 
 ```
 Everytime an agent finishes a game (self-observation):
 
-```
+```python
 self.intrinsic.doEndOfGame(score, thisPlayerIndex)
 ```
 
 Everytime another agent perform an action (opponent estimation):
 
-```
+```python
 action, actionType, board, boardAfter,possibleActions, 
 cardsInHand, thisPlayer, myIndex, done, score = params
 observeOponentAction(self, params, QModel)
@@ -77,14 +77,29 @@ Using a Chef's Hat simulation dataset.
 
 - run_MoodFromDataset.py - Example on how to create Moods Offline.
 
+The mood will be saved as a dataset (.pkl format), which allows it to be postprocessed at any time.
+
+
 #### Mood Plots
 
 The Moody framework adds to the Chef's Hat Simulation the following plots:
 
+ ![Plots Example](Images/plotsExample.png)
 - "Experiment_Mood" - The mood reading for all the self and opponent's estimations.
 - "Experiment_MoodNeurons" - The mood readings, together with the individual neuron readings, for all the self and opponent's estimations.
 - "Experiment_SelfProbabilitySuccess" - The self and opponent's estimation confidence probabilities for each action.
 
+##### Videos
+
+The Moody framework adds to the Chef's Hat Simulation the abillity to generate
+videos with the MoodNeurons plot. 
+
+- run_CreateVideoFromDataset.py - Example on how to create videos with the Mood readings.
+ 
+Click on the video bellow to see an example:
+ 
+  [![Watch the video](Images/VideoImage.png)](https://www.youtube.com/watch?v=uRyfbktynT0&t=42s)
+ 
 
 ## Use and distribution policy
 
