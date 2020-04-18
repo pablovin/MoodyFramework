@@ -16,8 +16,8 @@ def readIntrinsicMeasures(model):
     for p in range(len(model.probabilities)):
             if len(model.probabilities[p]) > 0:
                 probs[p].append(model.probabilities[p][-1])
-                moodReadings[p].append(model.moodReadings[p][-1])
-                moodNeurons[p].append(model.moodNeurons[p][-1])
+                moodReadings[p].append(model.moodReadings[p][[-1,-1]])
+                moodNeurons[p].append(model.moodNeurons[p][[-1,-1]])
 
     return probs,moodReadings,moodNeurons
 
@@ -28,8 +28,9 @@ def generateMoodFromDataset(intrinsicModels, dataset, saveDirectory = "", qModel
     if len(qModels)==0:
         qModels = []
         for indexAgent, agent in enumerate(agents):
-            agent.startAgent((11, 17, 200, loadModels[indexAgent], ""))
-            qModels.append(agent.actor)
+            if len(intrinsicModels) > indexAgent and not intrinsicModels[indexAgent] == "":
+                agent.startAgent((11, 17, 200, loadModels[indexAgent], ""))
+                qModels.append(agent.actor)
 
     columns = ["Time", "Agent Names", "Game Number", "Round Number", "Player", "Action Type",
                "P1 probability", "P2 probability", "P3 probability", "P4 probability",
@@ -68,16 +69,16 @@ def generateMoodFromDataset(intrinsicModels, dataset, saveDirectory = "", qModel
             moodNeurons = []
             for a in range(4):
                 probabilities.append(-1)
-                moods.append(-1)
-                moodNeurons.append(-1)
+                moods.append([-1,-1])
+                moodNeurons.append([-1,-1])
 
             #Is there an intrinsic model?
-            if not intrinsicModels[player] == "":
+            if len(intrinsicModels) > player and not intrinsicModels[player] == "":
                 #there is an intrinsic model for this player
 
                 #calculate the self-probability for this player
                 #Update the intrinsic model for this player when performing this action
-                selfProb, selfMood, selfNeurons = intrinsicModels[player].doSelfAction(qValues, "")
+                selfProb, selfMood, selfNeurons = intrinsicModels[player].doSelfAction(qValues)
                 probabilities[player] = selfProb
                 moods[player] = selfMood
                 moodNeurons[player] = selfNeurons
@@ -110,7 +111,8 @@ def generateMoodFromDataset(intrinsicModels, dataset, saveDirectory = "", qModel
 
             #Obtain which others will observe this action
             others = numpy.array(range(len(intrinsicModels))).tolist()
-            others.remove(player)
+            if player in others:
+                others.remove(player)
 
             for otherIndex in others:
                 if not intrinsicModels[otherIndex] == "":

@@ -1,7 +1,6 @@
 #Adapted from: Barros, P., & Wermter, S. (2017, May). A self-organizing model for affective memory. In 2017 International Joint Conference on Neural Networks (IJCNN) (pp. 31-38). IEEE.
 
-from MoodyFramework.IntrinsicAgent.Mood_GWR import AssociativeGWR
-from MoodyFramework.IntrinsicAgent import  PModel
+from MoodyFramework.Mood.GWR import AssociativeGWR
 import numpy
 import copy
 
@@ -31,20 +30,18 @@ class Intrinsic():
         self.selfConfidenceType = selfConfidenceType
         self.isUsingOponentMood = isUsingOponentMood
 
-        if self.selfConfidenceType == CONFIDENCE_PMODEL:
-            self.pModel = PModel()
-
         #initialize lists
         self.moods = []
         self.probabilities = []
         self.moodReadings = []
         self.moodNeurons = []
 
+        initialState = [0.5,0.5]#PA
 
         #Construct my own mood networks
         if self.isUsingSelfMood:
             self.moods.append(AssociativeGWR())
-            self.moods[0].initNetwork(numpy.array([[0], [0], [0], [0], [0]]), 1)
+            self.moods[0].initNetwork(numpy.array([initialState, initialState, initialState, initialState, initialState]), 1)
             self.probabilities.append([])
             self.moodReadings.append([])
             self.moodNeurons.append([])
@@ -54,7 +51,7 @@ class Intrinsic():
         if self.isUsingOponentMood:
             for i in range (3):
                 oponentNetwork = AssociativeGWR()
-                oponentNetwork.initNetwork(numpy.array([[0], [0], [0], [0], [0]]), 1)
+                oponentNetwork.initNetwork(numpy.array([initialState, initialState, initialState, initialState, initialState]), 1)
                 self.moods.append(oponentNetwork)
                 self.probabilities.append([])
                 self.moodReadings.append([])
@@ -158,12 +155,14 @@ class Intrinsic():
 
             newPartialConfidences = []
             for confidence in partialConfidences:
-                newPartialConfidences.append(confidence*0.1)
+                # newPartialConfidences.append(confidence*0.1)
+                newPartialConfidences.append(self.transformActionConfidence(confidence))
 
             partialConfidences = newPartialConfidences
 
             for confidence in partialConfidences:
-                self.adaptMood(confidence,moodIndex=moodIndex)
+                a,p = confidence
+                self.updateMood(a,p, moodIndex=moodIndex)
 
             moodReading, neurons = self.readMood(moodIndex=moodIndex)
 
@@ -177,17 +176,19 @@ class Intrinsic():
 
                 self.actionNumber[moodIndex] = 0
 
-                partialConfidences = [confidence, confidence, confidence, confidence, confidence, confidence, confidence,
-                                      confidence, confidence, confidence]
+                partialConfidences = []
+                for a in range(10):
+                    partialConfidences.append(self.transformEndGameConfidence(confidence))
 
                 for confidence in partialConfidences:
-                    self.adaptMood(confidence,moodIndex=moodIndex)
+                    a,p = confidence
+                    self.updateMood(a,p, moodIndex=moodIndex)
 
                 moodReading, neurons = self.readMood(moodIndex=moodIndex)
 
             return avgConfidence, moodReading, neurons
         else:
-            return -1, -1, -1
+            return -1, [-1,-1],[-1,-1]
 
     def doSelfAction(self, qValue):
 
@@ -210,25 +211,66 @@ class Intrinsic():
         self.actionNumber[0] =  self.actionNumber[0]+1
 
         if self.isUsingSelfMood:
-            confidence = probability*0.1
-            self.adaptMood(confidence, moodIndex=0)
+            # confidence = probability*0.1
+            a,p = self.transformActionConfidence(probability)
+            self.updateMood(a,p, moodIndex=0)
             moodReading, neurons = self.readMood(moodIndex=0)
-
 
             return probability, moodReading, neurons
 
 
-    def adaptMood(self, confidence, moodIndex, saveDirectory=""):
-        numberOfEpochs = 5  # Number of training epochs
-        insertionThreshold = 0.85       # Activation threshold for node insertion
+
+    def transformActionConfidence(self, confidence):
+
+
+        #Tone down the pleasure of a good action
+        p = confidence*0.7
+
+        #Modulate the arousal of a good action
+        if confidence > 0.5:
+            a = 0.5 + ((confidence-0.5) / (1-0.5))/2
+        else:
+            a = 0.5
+
+        # print("Probability:" + str(confidence))
+        # print ("neuron: [" + str(a)+ str(",") + str(p) + str("]"))
+        return a,p
+
+    def transformEndGameConfidence(self, confidence):
+
+        a = confidence*0.7
+        p = confidence*1.5
+
+        return a,p
+
+
+    def updateMood(self, a, p, moodIndex, saveDirectory=""):
+        numberOfEpochs = 1  # Number of training epochs
+        insertionThreshold = 0.9    # Activation threshold for node insertion
         # insertionThreshold = 0.99  # Activation threshold for node insertion
         # insertionThreshold = 0.0001 # Activation threshold for node insertion
-        learningRateBMU = 0.9  # Learning rate of the best-matching unit (BMU)
+        # learningRateBMU = 0.3  # Learning rate of the best-matching unit (BMU)
+
+        if p > 0:
+            learningRateBMU = 0.9
+            numberOfEpochs = 5  # Number of training epochs
+            amountStimuli = 10
+            learningRateNeighbors = 0.0001
+
+        else:
+            learningRateBMU = 0.01  # Learning rate of the best-matching unit (BMU)
+            numberOfEpochs = 1  # Number of training epochs
+            amountStimuli = 1
+            learningRateNeighbors = 0.0001
+
+        probs = []
+        for i in range(amountStimuli):
+            probs.append([a, p])
         # learningRateBMU = 0.35  # Learning rate of the best-matching unit (BMU)
         # learningRateNeighbors = 0.76  # Learning rate of the BMU's topological neighbors
-        learningRateNeighbors = 0.01  # Learning rate of the BMU's topological neighbors
+        # learningRateNeighbors = 0.001  # Learning rate of the BMU's topological neighbors
 
-        probs = [[confidence*30]]
+
 
         self.moods[moodIndex].trainAGWR(numpy.array(probs), numberOfEpochs, insertionThreshold, learningRateBMU, learningRateNeighbors)
 
@@ -239,6 +281,7 @@ class Intrinsic():
 
         if playerPosition == 0:
             confidence = 1
+            # print ("player :" + str(thisPlayer) + " - WON!")
         else:
             confidence = 0
 
@@ -248,30 +291,42 @@ class Intrinsic():
 
         if self.isUsingSelfMood:
             for a in range(10):
-                self.adaptMood(confidence, moodIndex=0)
+                ar,p = self.transformEndGameConfidence(confidence)
+                self.updateMood(ar,p, moodIndex=0)
             moodReading, neurons = self.readMood(moodIndex=0)
 
             return self.probabilities[0][-1], moodReading,neurons
+        # return -1, [-1,-1], [-1,-1]
 
 
     def readMood(self, moodIndex):
 
         neuronAge = numpy.copy(self.moods[moodIndex].habn) # age of the neurons
         neuronWeights = numpy.copy(self.moods[moodIndex].weights) # confidence of the neurons
-        habituatedWeights = neuronAge* neuronWeights # weighted neurons
+        # habituatedWeights = neuronAge* neuronWeights # weighted neurons
+
+        habituatedWeights = []
+        for a in range(len(neuronWeights)):
+            habituatedWeights.append(neuronWeights[a] * neuronAge[a])
+
+        habituatedWeights = numpy.array(habituatedWeights)
         # habituatedWeights = neuronWeights # weighted neurons
         # probmood = numpy.average(numpy.array(habituatedWeights).flatten())
-        probmood = numpy.tanh(numpy.array(habituatedWeights).flatten())
-        probmood = numpy.average(probmood)
+        probmoodA = numpy.array(habituatedWeights[:, 0]).flatten()
+        probmoodP = numpy.array(habituatedWeights[:, 1]).flatten()
+        # probmoodA = numpy.tanh(numpy.array(habituatedWeights[:, 0]).flatten())
+        # probmoodP = numpy.tanh(numpy.array(habituatedWeights[:, 1]).flatten())
+        probmoodA = numpy.average(probmoodA)
+        probmoodP = numpy.average(probmoodP)
         # probmood = numpy.exp(probmood) / numpy.sum(numpy.exp(probmood), axis=0)
         # if probmood > 1:
         #     probmood = 1
 
 
         self.moodNeurons[moodIndex].append((neuronWeights.tolist(), neuronAge.tolist()))
-        self.moodReadings[moodIndex].append(probmood)
+        self.moodReadings[moodIndex].append([probmoodA,probmoodP])
 
-        return probmood, (neuronWeights.tolist(), neuronAge.tolist())
+        return [probmoodA,probmoodP], (neuronWeights.tolist(), neuronAge.tolist())
 
 
 

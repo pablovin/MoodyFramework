@@ -40,6 +40,7 @@ class AssociativeGWR:
         self.habn[index] += (tau * 1.05 * (1. - self.habn[index]) - tau)
 
     def updateNeuralWeight(self, input, index, epsilon):
+
         delta = np.array([np.dot((input - self.weights[index]), epsilon)]) * self.habn[index]
         self.weights[index] = self.weights[index] + delta
 
@@ -101,12 +102,21 @@ class AssociativeGWR:
         self.epsilon_n = eeN
 
         self.distanceMetric = 1
-        self.habThreshold = 0.3
-        self.tau_b = 0.009
-        self.tau_n = 0.009
+        self.habThreshold = 0.99
+        # self.habThreshold = 0.3
+        # self.tau_b = 0.009
+        # self.tau_n = 0.009
+        if dataSet[0][1] > 0:
+         self.tau_b = 0
+         self.tau_n = 1
+        else:
+            self.tau_b = 1
+            self.tau_n = 0
+
+
         self.maxNodes = 5000  # OK for batch, bad for incremental
-        self.maxNeighbours = 6
-        self.maxAge = 100
+        self.maxNeighbours = 2
+        self.maxAge = 1000
         self.newNodeValue = 0.5
         self.aIncreaseFactor = 1
         self.aDecreaseFactor = 0.1
@@ -118,12 +128,12 @@ class AssociativeGWR:
             epochs += 1
             for iteration in range(0, self.samples):
                 # Generate input sample
-                input = dataSet[iteration]
+                inputData = dataSet[iteration]
 
                 # Find the best and second-best matching neurons
                 distances = np.zeros(self.numNodes)
                 for i in range(0, self.numNodes):
-                    distances[i] = self.computeDistance(self.weights[i], input, self.distanceMetric)
+                    distances[i] = self.computeDistance(self.weights[i], inputData, self.distanceMetric)
 
                 firstIndex = np.argmin(distances)
                 firstDistance = distances[firstIndex]
@@ -140,10 +150,18 @@ class AssociativeGWR:
                 # Compute network activity
                 a = math.exp(-firstDistance)
 
+                # print ("Input:" + str(inputData))
+                # print("Neurons:" + str(self.weights))
+                # print ("BMU:" + str(str(self.weights[firstIndex])))
+                # print ("Distance:" + str(firstDistance))
+                # print ("Activation:" + str(a) + " - A threshold:" + str(self.insertionThreshold))
+                # print ("Habituation:" + str(self.habn[firstIndex]) + str("h treshold:" + str(self.habThreshold)))
+
+
                 if ((a < self.insertionThreshold) and (self.habn[firstIndex] < self.habThreshold) and (
                         self.numNodes < self.maxNodes)):
                     # Add new neuron
-                    newWeight = np.array([np.dot(self.weights[firstIndex] + input, self.newNodeValue)])
+                    newWeight = np.array([np.dot(self.weights[firstIndex] + inputData, self.newNodeValue)])
                     self.weights = np.concatenate((self.weights, newWeight), axis=0)
                     newIndex = self.numNodes
                     self.numNodes += 1
@@ -167,10 +185,14 @@ class AssociativeGWR:
                     self.ages[newIndex, secondIndex] = 0
                     self.ages[secondIndex, newIndex] = 0
 
+                    # print (" Add Neuron")
+                    # print (" --- new neuron: " + str(newWeight))
+                    # print (" --- neurons:" + str(self.weights))
+                    # print(" --- Habituation:" + str(self.habn))
                     #print "(++", str(self.numNodes), ')'
                 else:
                     # Adapt weights
-                    self.updateNeuralWeight(input, firstIndex, self.epsilon_b)
+                    self.updateNeuralWeight(inputData, firstIndex, self.epsilon_b)
 
                     # Habituate BMU
                     self.habituateNeuron(firstIndex, self.tau_b)
@@ -188,8 +210,13 @@ class AssociativeGWR:
                     neighboursFirst = np.nonzero(self.edges[firstIndex])
                     for z in range(0, len(neighboursFirst[0])):
                         neIndex = neighboursFirst[0][z]
-                        self.updateNeuralWeight(input, neIndex, self.epsilon_n)
+                        self.updateNeuralWeight(inputData, neIndex, self.epsilon_n)
                         self.habituateNeuron(neIndex, self.tau_n)
+
+                    # print(" Update Neurons")
+                    # print (" --- update Treshold:" + str(self.epsilon_b))
+                    # print(" --- neurons:" + str(self.weights))
+                    # print(" --- Habituation:" + str(self.habn))
 
             # Remove old edges
             self.removeOldEdges()
@@ -200,7 +227,10 @@ class AssociativeGWR:
 
         # Remove isolated neurons
         self.removeIsolatedNeurons()
-
+        # print ("Average A:" + str(np.mean(np.array(self.weights[:,0]))))
+        # print("Average P:" + str(np.mean(np.array(self.weights[:, 1]))))
+        # print ("-----")
+        # input("Next action!")
 
 
     # Test GWR ################################################################
