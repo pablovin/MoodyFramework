@@ -5,6 +5,8 @@ from MoodyFramework.Utils import GenerateMoodFromDataset
 from MoodyFramework.Mood.Intrinsic import Intrinsic, CONFIDENCE_PHENOMENOLOGICAL
 
 from Agents import AgentRandom, AgentDQL, AgentA2C, AgentPPO
+
+import cv2
 import numpy
 
 #Experiment control variables
@@ -16,8 +18,6 @@ saveMoodPlot = "" #Location where the Mood Plots will be saved
 gameToGenerateMood = 0 # Game from which to generate the mood.
 
 #Agents
-
-
 agent1 = AgentDQL.AgentDQL([False, 1.0, "DQL"]) #training agent
 agent2 = AgentPPO.AgentPPO([False, 1.0, "PPO"]) #training agent
 agent3 = AgentA2C.AgentA2C([False, 1.0, "A2C"])  # training agent
@@ -41,6 +41,13 @@ loadModelAgent4 = ""
 
 loadModel = [loadModelAgent1,loadModelAgent2, loadModelAgent3, loadModelAgent4]
 
+
+#Faces
+
+agent1 = cv2.imread("/home/pablo/Documents/Datasets/ChefsHat_ReinforcementLearning/MoodTest/000007.jpg")
+
+agentFaces = [agent1,"","",""]
+
 #Mood Controlers
 intrinsicWithMoodAgent1 = Intrinsic(selfConfidenceType=CONFIDENCE_PHENOMENOLOGICAL, isUsingSelfMood=True,isUsingOponentMood=True)
 intrinsicWithMoodAgent2 = Intrinsic(selfConfidenceType=CONFIDENCE_PHENOMENOLOGICAL, isUsingSelfMood=True,isUsingOponentMood=True)
@@ -50,7 +57,7 @@ intrinsicMoods = [intrinsicWithMoodAgent1, intrinsicWithMoodAgent2, intrinsicWit
 
 #
 # Generate MoodDataset
-GenerateMoodFromDataset.generateMoodFromDataset(intrinsicModels=intrinsicMoods, dataset=dataSetLocation, agents=agents, loadModels=loadModel,saveDirectory = saveMoodDataset)
+GenerateMoodFromDataset.generateMoodFromDataset(intrinsicModels=intrinsicMoods, dataset=dataSetLocation, agents=agents, agentFaces=agentFaces, loadModels=loadModel,saveDirectory = saveMoodDataset)
 
 # Generate Plots
 moodDataset = saveMoodDataset + "/IntrinsicDataset.pkl"

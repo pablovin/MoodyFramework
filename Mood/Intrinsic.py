@@ -221,8 +221,6 @@ class Intrinsic():
 
 
     def transformActionConfidence(self, confidence):
-
-
         #Tone down the pleasure of a good action
         p = confidence*0.7
 
@@ -327,7 +325,6 @@ class Intrinsic():
         self.moodReadings[moodIndex].append([probmoodA,probmoodP])
 
         return [probmoodA,probmoodP], (neuronWeights.tolist(), neuronAge.tolist())
-
 
 
     #PModel functions
